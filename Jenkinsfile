@@ -48,7 +48,7 @@ pipeline {
                     // Test if the app is running by hitting the reverse proxy via curl
                     // If Nginx forwards the request to the Java app, this should work
                     sh '''#!/bin/bash
-                    curl -f http://localhost:7474  # Test Nginx's proxy to Java app
+                    curl -f http://88.222.241.45:7474  # Test Nginx's proxy to Java app
                     '''
                 }
             }
