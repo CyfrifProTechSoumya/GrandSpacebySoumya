@@ -1,157 +1,51 @@
 pipeline {
     agent any
-
     environment {
-        REGISTRY = "docker.io"
-        IMAGE_NAME_BACKEND= "grandspace-fullstack"
-        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'  // Update this to your Docker Hub credentials ID in Jenkins
-        BUILD_TAG = "${env.BUILD_NUMBER}"
-        SPRING_DATASOURCE_URL = "jdbc:mysql://172.22.0.2:3306/grandspace?createDatabaseIfNotExist=true" // Updated hostname to 'db' as per Docker network
-        SPRING_DATASOURCE_USERNAME = "root"
-        SPRING_DATASOURCE_PASSWORD = "root"
-        DOCKER_NETWORK = "grandspace_network"
-        DB_CONTAINER = "grandspace-db"
-        PHPMYADMIN_CONTAINER = "grandspace-phpmyadmin"
-        BACKEND_CONTAINER = "grandspace-container"
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'  // Path to your docker-compose file
     }
-
-    tools {
-        maven 'maven'
-    }
-
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/CyfrifProTechSoumya/GrandSpacebySoumya.git'  // Replace with your repo URL
+            }
+        }
+        stage('Build Java Application (Gradle)') {
             steps {
                 script {
-                    echo "Cloning repository..."
-                    checkout scm
+                    // Build the Java application and create the .jar file using Gradle
+                    sh './gradlew build'  // Assuming Gradle wrapper is present
                 }
             }
         }
-
-        stage('Create Docker Network') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Creating Docker network if not exists..."
-                    sh """
-                    docker network inspect ${DOCKER_NETWORK} >/dev/null 2>&1 || docker network create ${DOCKER_NETWORK}
-                    """
+                    // Build the Docker image for the Java app
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} build grandspace-java-app'  // Correct service name
                 }
             }
         }
-
-        stage('Start MySQL') {
-    steps {
-        script {
-            echo "Starting MySQL container..."
-            sh """
-            # Check if the container is running or exists
-            if docker ps --filter "name=${DB_CONTAINER}" | grep -q ${DB_CONTAINER}; then
-                echo "Container ${DB_CONTAINER} is already running."
-            elif docker ps -a --filter "name=${DB_CONTAINER}" | grep -q ${DB_CONTAINER}; then
-                echo "Container ${DB_CONTAINER} exists but is stopped. Restarting it..."
-                docker start ${DB_CONTAINER}
-            else
-                echo "Container ${DB_CONTAINER} does not exist. Creating and starting a new container..."
-                docker run -d --name ${DB_CONTAINER} \
-                    --network ${DOCKER_NETWORK} \
-                    -e MYSQL_ROOT_PASSWORD=${SPRING_DATASOURCE_PASSWORD} \
-                    -e MYSQL_DATABASE=grandspace \
-                    -p 3308:3306 mysql:5.7
-            fi
-            """
+        stage('Start Services') {
+            steps {
+                script {
+                    // Start up the services using docker-compose
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} up -d'
+                }
+            }
+        }
+        stage('Test Application') {
+            steps {
+                script {
+                    // Test if the app is running by hitting the reverse proxy via curl
+                    sh 'curl -f http://88.222.241.45/:7474'  // Check if Nginx is forwarding traffic
+                }
+            }
         }
     }
-}
-
-        stage('Start phpMyAdmin') {
-            steps {
-                script {
-                    echo "Starting phpMyAdmin container..."
-                    sh """
-                    docker ps -q --filter "name=${PHPMYADMIN_CONTAINER}" | grep -q . || \
-                    docker run -d --name ${PHPMYADMIN_CONTAINER} \
-                        --network ${DOCKER_NETWORK} \
-                        -e PMA_HOST=${DB_CONTAINER} \
-                        -e MYSQL_ROOT_PASSWORD=${SPRING_DATASOURCE_PASSWORD} \
-                        -p 8182:80 phpmyadmin/phpmyadmin
-                    """
-                }
-            }
-        }
-
-        stage('Login to Docker Hub') {
-            steps {
-                script {
-                    echo "Logging in to Docker Hub..."
-                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS_ID}") {
-                        echo 'Docker login successful'
-                    }
-                }
-            }
-        }
-
-        stage('Build GrandSpaceProject') {
-            steps {
-                dir('GrandSpaceProject') {
-                    script {
-                        echo "Building GrandSpaceProject..."
-                        sh 'mvn clean install'
-                        echo "Building Docker image for GrandSpaceProject..."
-                        sh """
-                        docker build -t ${REGISTRY}/${IMAGE_NAME_BACKEND}:${BUILD_TAG} .
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Push Images to Docker Hub') {
-            steps {
-                script {
-                    echo "Pushing images to Docker Hub..."
-                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS_ID}") {
-                        // Tagging and pushing backend image
-                        sh """
-                        docker tag ${REGISTRY}/${IMAGE_NAME_BACKEND}:${BUILD_TAG} ${REGISTRY}/cyfrifprotech/${IMAGE_NAME_BACKEND}:${BUILD_TAG}
-                        docker push ${REGISTRY}/cyfrifprotech/${IMAGE_NAME_BACKEND}:${BUILD_TAG}
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Deploy Grandspace') {
-    steps {
-        script {
-            echo "Updating GrandSpaceProject container..."
-            sh """
-            # Check if the backend container exists and remove it if necessary
-            docker ps -a -q --filter "name=${BACKEND_CONTAINER}" | grep -q . && \
-            docker rm -f ${BACKEND_CONTAINER} || echo "No existing backend container to remove."
-
-            # Run a new backend container
-            docker run -d --name ${BACKEND_CONTAINER} \
-                --network ${DOCKER_NETWORK} \
-                -e SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL} \
-                -e SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME} \
-                -e SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD} \
-                -p 9080:9090 ${REGISTRY}/cyfrifprotech/${IMAGE_NAME_BACKEND}:${BUILD_TAG}
-            """
-        }
-    }
-}
-
-        stage('Cleanup Unused Resources') {
-            steps {
-                script {
-                    echo "Cleaning up unused Docker resources..."
-                    sh """
-                    docker image prune -f
-                    docker container prune -f
-                    """
-                }
-            }
+    post {
+        always {
+            // Clean up Docker resources after pipeline runs
+            cleanWs()
         }
     }
 }
