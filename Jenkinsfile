@@ -12,6 +12,8 @@ pipeline {
         stage('Build Java Application (Gradle)') {
             steps {
                 script {
+                    // Ensure gradle wrapper is executable
+                    sh 'chmod +x gradlew'  
                     // Build the Java application and create the .jar file using Gradle
                     sh './gradlew build'  // Assuming Gradle wrapper is present
                 }
@@ -37,7 +39,7 @@ pipeline {
             steps {
                 script {
                     // Test if the app is running by hitting the reverse proxy via curl
-                    sh 'curl -f http://88.222.241.45/:7474'  // Check if Nginx is forwarding traffic
+                    sh 'curl -f http://localhost:7474'  // Check if Nginx is forwarding traffic to the Java app
                 }
             }
         }

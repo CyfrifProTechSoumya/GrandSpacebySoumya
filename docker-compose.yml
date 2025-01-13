@@ -4,10 +4,10 @@ services:
   # Java application
   grandspace-java-app:
     build:
-      context: .
+      context: .  # Current directory, which includes your Dockerfile
       dockerfile: Dockerfile
     ports:
-      - "7171:8080"   # External 7171 maps to internal 8080 for the Java app
+      - "7171:8080"  # External 7171 maps to internal 8080 for the Java app
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://grandspace-mysql-db:3306/mydb  # MySQL service name
       SPRING_DATASOURCE_USERNAME: root
@@ -28,7 +28,7 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     ports:
-      - "7272:3306"   # External MySQL port
+      - "7272:3306"  # External MySQL port
     networks:
       - app-network
 
@@ -36,7 +36,7 @@ services:
   grandspace-phpmyadmin:
     image: phpmyadmin/phpmyadmin
     ports:
-      - "7373:80"     # External phpMyAdmin port
+      - "7373:80"  # External phpMyAdmin port
     environment:
       PMA_HOST: grandspace-mysql-db  # MySQL service name
       MYSQL_ROOT_PASSWORD: root
@@ -47,9 +47,9 @@ services:
   nginx:
     image: nginx:latest
     ports:
-      - "7474:80"     # External port for Nginx (front-facing)
+      - "7474:80"  # External port for Nginx (front-facing)
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf   # Custom Nginx config
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Custom Nginx config
     depends_on:
       - grandspace-java-app  # Ensure Java app starts before Nginx
     networks:
