@@ -42,8 +42,17 @@ pipeline {
                 script {
                     // Add a sleep to give time for the containers to fully start
                     sh '''#!/bin/bash
+                    echo "Waiting for containers to start..."
                     sleep 30  # Wait for services to start
-                    curl -f http://host.docker.internal:7474  # Test Nginx's proxy to Java app
+                    
+                    echo "Testing Nginx Reverse Proxy..."
+                    // Test for Windows/Mac using host.docker.internal
+                    // Test for Linux using the Docker gateway IP
+                    if [[ "$(uname)" == "Darwin" || "$(uname)" == "Linux" ]]; then
+                        curl -f http://host.docker.internal:7474 || curl -f http://172.17.0.1:7474  # Linux fallback
+                    else
+                        curl -f http://localhost:7474  # Windows/Mac fallback
+                    fi
                     '''
                 }
             }
