@@ -7,15 +7,12 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                // List files to verify pom.xml exists
-                sh 'ls -la'
+                sh 'ls -la'  // List files to verify pom.xml exists
             }
         }
         stage('Build Java Application (Maven)') {
             steps {
                 script {
-                    // Build the Java application and create the .jar file using Maven
-                    // Ensure it creates the .jar file before proceeding
                     sh '''#!/bin/bash
                     mvn clean package  # Clean and build the Maven project
                     '''
@@ -25,7 +22,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image for the Java app
                     sh '''#!/bin/bash
                     docker-compose -f ${DOCKER_COMPOSE_FILE} build grandspace-java-app
                     '''
@@ -35,7 +31,6 @@ pipeline {
         stage('Start Services') {
             steps {
                 script {
-                    // Start up the services using docker-compose
                     sh '''#!/bin/bash
                     docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
                     '''
@@ -45,10 +40,10 @@ pipeline {
         stage('Test Application') {
             steps {
                 script {
-                    // Test if the app is running by hitting the reverse proxy via curl
-                    // If Nginx forwards the request to the Java app, this should work
+                    // Add a sleep to give time for the containers to fully start
                     sh '''#!/bin/bash
-                    curl -f http://88.222.241.45:5050  # Test Nginx's proxy to Java app
+                    sleep 30  # Wait for services to start
+                    curl -f http://localhost:7474  # Test Nginx's proxy to Java app
                     '''
                 }
             }
@@ -56,7 +51,6 @@ pipeline {
     }
     post {
         always {
-            // Clean up Docker resources after pipeline runs
             cleanWs()
         }
     }

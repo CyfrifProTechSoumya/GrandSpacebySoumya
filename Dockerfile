@@ -8,8 +8,6 @@ RUN apt-get update && apt-get install -y maven
 WORKDIR /app
 
 # Step 3: Copy the pom.xml and source code into the container
-# Copy pom.xml first to leverage Docker cache for dependencies
-# Step 3: Copy the pom.xml and source code into the container
 COPY pom.xml ./pom.xml
 COPY src ./src
 
@@ -26,7 +24,7 @@ WORKDIR /app
 COPY --from=build /app/target/grandspace.jar /app/grandspace.jar
 
 # Expose the port the application will run on (default for Spring Boot is 9090)
-EXPOSE 5050
+EXPOSE 8080
 
 # Step 6: Run the Spring Boot application
 ENTRYPOINT ["java", "-jar", "grandspace.jar"]
