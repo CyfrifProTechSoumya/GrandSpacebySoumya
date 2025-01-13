@@ -43,7 +43,7 @@ pipeline {
                     // Add a sleep to give time for the containers to fully start
                     sh '''#!/bin/bash
                     sleep 30  # Wait for services to start
-                    curl -f http://localhost:7474  # Test Nginx's proxy to Java app
+                    curl -f http://host.docker.internal:7474  # Test Nginx's proxy to Java app
                     '''
                 }
             }
