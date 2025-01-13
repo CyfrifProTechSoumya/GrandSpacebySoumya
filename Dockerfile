@@ -1,32 +1,22 @@
-# Use an official OpenJDK runtime as the base image
+# Use an OpenJDK base image
 FROM openjdk:17-jdk-slim
+
+# Install Maven
+RUN apt-get update && apt-get install -y maven
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install Maven and other dependencies
-RUN apt-get update && \
-    apt-get install -y wget unzip && \
-    wget https://downloads.apache.org/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz && \
-    tar -xvzf apache-maven-3.8.4-bin.tar.gz && \
-    mv apache-maven-3.8.4 /opt/maven && \
-    ln -s /opt/maven/bin/mvn /usr/local/bin/mvn && \
-    apt-get clean
-
-# Set MAVEN_HOME environment variable
-ENV MAVEN_HOME=/opt/maven
-ENV PATH="${MAVEN_HOME}/bin:${PATH}"
-
-# Copy the pom.xml and source code to the container
+# Copy the Maven project files
 COPY . /app
 
-# Run Maven to build the project and create the .jar file
+# Build the application using Maven
 RUN mvn clean package
 
-# Copy the .jar file from the target directory to the container
-COPY target/*.jar /app/myapp.jar  # Ensure the correct .jar file is copied
+# Copy the built .jar file
+COPY target/*.jar /app/myapp.jar
 
-# Expose the port that the application will run on (8080 is common for Spring Boot)
+# Expose the port that the application will run on
 EXPOSE 7171
 
 # Command to run the Java application
