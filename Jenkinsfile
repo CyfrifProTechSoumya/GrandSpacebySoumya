@@ -1,54 +1,67 @@
 pipeline {
     agent any
-
     environment {
-        IMAGE_NAME = "abcgrand"            // Name of your Docker image
-        IMAGE_TAG = "latest"                 // Tag the image with the Git commit hash
-        // DOCKER_REGISTRY = "docker.io"              // Docker registry (Docker Hub in this case)
-        // DOCKER_REPO = "your-username"              // Docker Hub username (not used now)
-        DOCKER_IMAGE = "${IMAGE_NAME}:${IMAGE_TAG}" // Full Docker image name
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'  // Path to your docker-compose file
     }
-
     stages {
         stage('Checkout') {
             steps {
-                // Clone the repository from Git
                 checkout scm
+                sh 'ls -la'  // List files to verify pom.xml exists
             }
         }
-
-        stage('Build with Maven') {
+        stage('Build Java Application (Maven)') {
             steps {
                 script {
-                    // Build your Java application with Maven
-                    sh 'mvn clean install'
+                    sh '''#!/bin/bash
+                    mvn clean package  # Clean and build the Maven project
+                    '''
                 }
             }
         }
-
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build Docker image using Dockerfile
-                    sh '''
-                        docker build -t ${DOCKER_IMAGE} .
+                    sh '''#!/bin/bash
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} build grandspace-java-app
+                    '''
+                }
+            }
+        }
+        stage('Start Services') {
+            steps {
+                script {
+                    sh '''#!/bin/bash
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
+                    '''
+                }
+            }
+        }
+        stage('Test Application') {
+            steps {
+                script {
+                    // Add a sleep to give time for the containers to fully start
+                    sh '''#!/bin/bash
+                    echo "Waiting for containers to start..."
+                    sleep 30  # Wait for services to start
+
+                    # Wait for nginx to be available
+                    until curl -f http://nginx:80; do
+                        echo "Waiting for Nginx to be ready..."
+                        sleep 5
+                    done
+
+                    echo "Testing Nginx Reverse Proxy..."
+                    curl -f http://nginx:80  # Use the Nginx service name directly
                     '''
                 }
             }
         }
 
-        stage('Deploy Docker Image') {
-            steps {
-                script {
-                    // If you're using Docker Compose, you can deploy the app like this:
-                    sh '''
-                        docker-compose -f docker-compose.yml up -d
-                    '''
-
-                    // Alternatively, you can deploy using a simple docker run command:
-                    // sh 'docker run -d -p 8080:8080 --name your-container-name ${DOCKER_IMAGE}'
-                }
-            }
+    }
+    post {
+        always {
+            cleanWs()
         }
     }
 }

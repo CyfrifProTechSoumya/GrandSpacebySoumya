@@ -1,27 +1,30 @@
-# Stage 1: Build the application using Maven
-FROM maven:3.8.4-jdk-11 as builder
+# Step 1: Use an official OpenJDK base image for the build stage
+FROM openjdk:17-jdk-slim as build
 
-# Set working directory inside the container
+# Install Maven in the build stage
+RUN apt-get update && apt-get install -y maven
+
+# Step 2: Set the working directory inside the container to where the pom.xml is located
 WORKDIR /app
 
-# Copy the pom.xml and source code
-COPY pom.xml .
-COPY src/ ./src/
+# Step 3: Copy the pom.xml and source code into the container
+COPY pom.xml ./pom.xml
+COPY src ./src
 
-# Build the application using Maven
-RUN mvn clean install
+# Step 4: Run Maven to build the project (without running tests)
+RUN mvn clean install -DskipTests -f ./pom.xml
 
-# Stage 2: Run the application with OpenJDK
-FROM openjdk:11-jre-slim
+# Step 5: Use another OpenJDK image for the runtime environment (final image)
+FROM openjdk:17-jdk-slim
 
-# Set working directory inside the container
+# Set the working directory in the final container
 WORKDIR /app
 
-# Copy the JAR file from the build stage
-COPY --from=builder /app/target/your-application.jar /app/your-application.jar
+# Copy the built (repackaged) JAR file from the previous stage to the final container
+COPY --from=build /app/target/grandspace.jar /app/grandspace.jar
 
-# Expose port 8080 for the app
-EXPOSE 5050
+# Expose the port the application will run on (default for Spring Boot is 9090)
+EXPOSE 8080
 
-# Run the application
-CMD ["java", "-jar", "/app/your-application.jar"]
+# Step 6: Run the Spring Boot application
+ENTRYPOINT ["java", "-jar", "grandspace.jar"]
