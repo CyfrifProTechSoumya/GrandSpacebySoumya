@@ -44,13 +44,20 @@ pipeline {
                     sh '''#!/bin/bash
                     echo "Waiting for containers to start..."
                     sleep 30  # Wait for services to start
-            
+
+                    # Wait for nginx to be available
+                    until curl -f http://nginx:80; do
+                        echo "Waiting for Nginx to be ready..."
+                        sleep 5
+                    done
+
                     echo "Testing Nginx Reverse Proxy..."
                     curl -f http://nginx:80  # Use the Nginx service name directly
                     '''
                 }
             }
         }
+
     }
     post {
         always {

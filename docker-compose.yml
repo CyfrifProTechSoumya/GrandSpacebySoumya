@@ -16,6 +16,7 @@ services:
       - app-network
     volumes:
       - ./target:/app  # Mount target directory (containing the .jar) to the container
+    restart: always  # Ensure the container restarts if it fails
 
   # MySQL Database
   grandspace-mysql-db:
@@ -29,6 +30,7 @@ services:
       - "7272:3306"  # External MySQL port
     networks:
       - app-network
+    restart: always  # Ensure the container restarts if it fails
 
   # phpMyAdmin for MySQL management
   grandspace-phpmyadmin:
@@ -40,6 +42,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
     networks:
       - app-network
+    restart: always  # Ensure the container restarts if it fails
 
   # Nginx Reverse Proxy
   nginx:
@@ -52,6 +55,7 @@ services:
       - grandspace-java-app  # Ensure Java app starts before Nginx
     networks:
       - app-network
+    restart: always  # Ensure the container restarts if it fails
 
 networks:
   app-network:
@@ -59,4 +63,3 @@ networks:
 
 volumes:
   mysql-data:
-
