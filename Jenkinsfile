@@ -44,15 +44,9 @@ pipeline {
                     sh '''#!/bin/bash
                     echo "Waiting for containers to start..."
                     sleep 30  # Wait for services to start
-                    
+            
                     echo "Testing Nginx Reverse Proxy..."
-                    // Test for Windows/Mac using host.docker.internal
-                    // Test for Linux using the Docker gateway IP
-                    if [[ "$(uname)" == "Darwin" || "$(uname)" == "Linux" ]]; then
-                        curl -f http://host.docker.internal:7474 || curl -f http://172.17.0.1:7474  # Linux fallback
-                    else
-                        curl -f http://88.222.241.45:7474  # Windows/Mac fallback
-                    fi
+                    curl -f http://nginx:80  # Use the Nginx service name directly
                     '''
                 }
             }
