@@ -16,7 +16,9 @@ pipeline {
                 script {
                     // Build the Java application and create the .jar file using Maven
                     // Ensure it creates the .jar file before proceeding
-                    sh 'mvn clean package'  // Clean and build the Maven project
+                    sh '''#!/bin/bash
+                    mvn clean package  # Clean and build the Maven project
+                    '''
                 }
             }
         }
@@ -24,7 +26,9 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image for the Java app
-                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} build grandspace-java-app'
+                    sh '''#!/bin/bash
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} build grandspace-java-app
+                    '''
                 }
             }
         }
@@ -32,7 +36,9 @@ pipeline {
             steps {
                 script {
                     // Start up the services using docker-compose
-                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} up -d'
+                    sh '''#!/bin/bash
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
+                    '''
                 }
             }
         }
@@ -41,7 +47,9 @@ pipeline {
                 script {
                     // Test if the app is running by hitting the reverse proxy via curl
                     // If Nginx forwards the request to the Java app, this should work
-                    sh 'curl -f http://localhost:7474'  // Test Nginx's proxy to Java app
+                    sh '''#!/bin/bash
+                    curl -f http://localhost:7474  # Test Nginx's proxy to Java app
+                    '''
                 }
             }
         }
