@@ -7,6 +7,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                // List files to verify gradlew exists
+                sh 'ls -la'
             }
         }
         stage('Build Java Application (Gradle)') {
