@@ -6,8 +6,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Ensure you're pulling from the correct branch
-                git branch: 'main', url: 'https://github.com/CyfrifProTechSoumya/GrandSpacebySoumya.git'
+                checkout scm
             }
         }
         stage('Build Java Application (Gradle)') {
