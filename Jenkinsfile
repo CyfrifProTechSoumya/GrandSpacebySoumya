@@ -7,19 +7,16 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                // List files to verify gradlew exists
+                // List files to verify pom.xml exists
                 sh 'ls -la'
             }
         }
-        stage('Build Java Application (Gradle)') {
+        stage('Build Java Application (Maven)') {
             steps {
                 script {
-                    // Ensure gradle wrapper is executable
-                    sh 'chmod +x gradlew'
-                    
-                    // Build the Java application and create the .jar file using Gradle
+                    // Build the Java application and create the .jar file using Maven
                     // Ensure it creates the .jar file before proceeding
-                    sh './gradlew clean build'  // Clean build to ensure latest build
+                    sh 'mvn clean package'  // Clean and build the Maven project
                 }
             }
         }
@@ -27,7 +24,7 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image for the Java app
-                    sh 'docker-compose -f "${DOCKER_COMPOSE_FILE}" build grandspace-java-app'
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} build grandspace-java-app'
                 }
             }
         }
@@ -35,7 +32,7 @@ pipeline {
             steps {
                 script {
                     // Start up the services using docker-compose
-                    sh 'docker-compose -f "${DOCKER_COMPOSE_FILE}" up -d'
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} up -d'
                 }
             }
         }
