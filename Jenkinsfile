@@ -6,16 +6,19 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/CyfrifProTechSoumya/GrandSpacebySoumya.git'  // Replace with your repo URL
+                // Ensure you're pulling from the correct branch
+                git branch: 'main', url: 'https://github.com/CyfrifProTechSoumya/GrandSpacebySoumya.git'
             }
         }
         stage('Build Java Application (Gradle)') {
             steps {
                 script {
                     // Ensure gradle wrapper is executable
-                    sh 'chmod +x gradlew'  
+                    sh 'chmod +x gradlew'
+                    
                     // Build the Java application and create the .jar file using Gradle
-                    sh './gradlew build'  // Assuming Gradle wrapper is present
+                    // Ensure it creates the .jar file before proceeding
+                    sh './gradlew clean build'  // Clean build to ensure latest build
                 }
             }
         }
@@ -23,7 +26,7 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image for the Java app
-                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} build grandspace-java-app'  // Correct service name
+                    sh 'docker-compose -f "${DOCKER_COMPOSE_FILE}" build grandspace-java-app'
                 }
             }
         }
@@ -31,7 +34,7 @@ pipeline {
             steps {
                 script {
                     // Start up the services using docker-compose
-                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} up -d'
+                    sh 'docker-compose -f "${DOCKER_COMPOSE_FILE}" up -d'
                 }
             }
         }
@@ -39,7 +42,8 @@ pipeline {
             steps {
                 script {
                     // Test if the app is running by hitting the reverse proxy via curl
-                    sh 'curl -f http://localhost:7474'  // Check if Nginx is forwarding traffic to the Java app
+                    // If Nginx forwards the request to the Java app, this should work
+                    sh 'curl -f http://localhost:7474'  // Test Nginx's proxy to Java app
                 }
             }
         }
