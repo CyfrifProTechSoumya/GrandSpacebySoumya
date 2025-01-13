@@ -51,7 +51,7 @@ pipeline {
                     if [[ "$(uname)" == "Darwin" || "$(uname)" == "Linux" ]]; then
                         curl -f http://host.docker.internal:7474 || curl -f http://172.17.0.1:7474  # Linux fallback
                     else
-                        curl -f http://localhost:7474  # Windows/Mac fallback
+                        curl -f http://88.222.241.45:7474  # Windows/Mac fallback
                     fi
                     '''
                 }
